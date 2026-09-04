@@ -1,0 +1,110 @@
+{% extends 'learning/base.html' %}
+
+{% block content %}
+<style>
+    .dash-wrapper { min-height: 90vh; padding: 30px 0; background: #f0f4f8; }
+    .stat-card { background: white; border-radius: 16px; padding: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.06); text-align: center; }
+    .stat-number { font-size: 2.5rem; font-weight: 800; }
+    .stat-label { color: #6c757d; font-size: 0.9rem; }
+    .progress-card { background: white; border-radius: 16px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.06); transition: transform 0.2s; }
+    .progress-card:hover { transform: translateY(-3px); }
+    .progress-bar-custom { height: 10px; border-radius: 5px; background: #e9ecef; overflow: hidden; }
+    .progress-bar-fill { height: 100%; border-radius: 5px; background: linear-gradient(90deg, #0d6efd, #6610f2); transition: width 0.5s ease; }
+    .badge-pending { background: #fff3cd; color: #856404; }
+    .badge-active { background: #d1e7dd; color: #0f5132; }
+    .cert-card { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 16px; padding: 20px; }
+    .section-title { font-weight: 700; border-left: 4px solid #0d6efd; padding-left: 12px; margin-bottom: 20px; }
+</style>
+
+<div class="dash-wrapper">
+    <div class="container">
+        <h2 class="fw-bold mb-4">My Dashboard</h2>
+
+        <!-- Stats Row -->
+        <div class="row g-4 mb-5">
+            <div class="col-md-4">
+                <div class="stat-card">
+                    <div class="stat-number text-primary">{{ total_enrolled }}</div>
+                    <div class="stat-label">Active Courses</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="stat-card">
+                    <div class="stat-number text-success">{{ total_certs }}</div>
+                    <div class="stat-label">Certificates Earned</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="stat-card">
+                    <div class="stat-number text-warning">{{ pending_enrollments|length }}</div>
+                    <div class="stat-label">Pending Payments</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Active Courses with Progress -->
+        {% if course_progress %}
+        <h4 class="section-title">My Courses</h4>
+        <div class="row g-4 mb-5">
+            {% for cp in course_progress %}
+            <div class="col-md-6 col-lg-4">
+                <div class="progress-card">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <h6 class="fw-bold mb-0">{{ cp.course.title }}</h6>
+                        <span class="badge badge-active rounded-pill">Active</span>
+                    </div>
+                    <p class="text-muted small mb-2">{{ cp.watched }}/{{ cp.total_videos }} videos watched</p>
+                    <div class="progress-bar-custom mb-2">
+                        <div class="progress-bar-fill" style="width: {{ cp.progress_pct }}%;"></div>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="small fw-bold text-primary">{{ cp.progress_pct }}% complete</span>
+                        <a href="{% url 'course_videos' cp.course.id %}" class="btn btn-sm btn-outline-primary rounded-pill">Continue</a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Pending Payments -->
+        {% if pending_enrollments %}
+        <h4 class="section-title">Pending Payments</h4>
+        <div class="row g-4 mb-5">
+            {% for enrollment in pending_enrollments %}
+            <div class="col-md-6 col-lg-4">
+                <div class="progress-card" style="border-left: 4px solid #ffc107;">
+                    <h6 class="fw-bold">{{ enrollment.course.title }}</h6>
+                    <p class="text-muted small mb-1">UTR: {{ enrollment.payment_id }}</p>
+                    <span class="badge badge-pending rounded-pill">Awaiting Verification</span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Certificates -->
+        {% if certificates %}
+        <h4 class="section-title">My Certificates</h4>
+        <div class="row g-4 mb-5">
+            {% for cert in certificates %}
+            <div class="col-md-6 col-lg-4">
+                <div class="cert-card">
+                    <h6 class="fw-bold mb-1">{{ cert.course.title }}</h6>
+                    <p class="small opacity-75 mb-2">Score: {{ cert.score }} | {{ cert.created_at|date:"M d, Y" }}</p>
+                    <a href="{% url 'download_certificate' cert.id %}" class="btn btn-sm btn-light rounded-pill">View Certificate</a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if not course_progress and not pending_enrollments and not certificates %}
+        <div class="text-center py-5">
+            <h4 class="text-muted">No courses yet. Start learning!</h4>
+            <a href="{% url 'mood_select' %}" class="btn btn-primary rounded-pill mt-3 px-4">Browse Courses</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

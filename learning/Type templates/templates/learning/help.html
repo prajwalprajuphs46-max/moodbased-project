@@ -1,0 +1,45 @@
+{% extends 'learning/navbar.html' %}
+
+{% block title %}Help & Support | Mood Learning{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="text-center mb-5">
+            <h1 class="fw-bold">How can we help?</h1>
+            <p class="text-muted">Find answers to common questions or reach out to our team.</p>
+        </div>
+
+        <div class="accordion accordion-flush shadow-sm rounded-4 overflow-hidden" id="helpFaq">
+            <div class="accordion-item">
+                <h2 class="accordion-header">
+                    <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#faq1">
+                        How does Mood-Based learning work?
+                    </button>
+                </h2>
+                <div id="faq1" class="accordion-collapse collapse show" data-bs-parent="#helpFaq">
+                    <div class="accordion-body">
+                The 'Mood Reader' app helps users identify their emotional state, allowing them to choose educational content that matches their current energy levels and mood.                    </div>
+                </div>
+            </div>
+            <div class="accordion-item">
+                <h2 class="accordion-header">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq2">
+                        How do I submit an assignment?
+                    </button>
+                </h2>
+                <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#helpFaq">
+                    <div class="accordion-body">
+                        Go to your active course, click "View Assignment," and upload your PDF, Docx, or ZIP file through the secure portal.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card bg-primary text-white border-0 rounded-4 mt-5 p-4 text-center">
+            <h5 class="fw-bold">Still need help?</h5>
+            <p class="mb-0">Contact the developer: <strong>RVP Team</strong></p>
+        </div>
+    </div>
+</div>
+{% endblock %}

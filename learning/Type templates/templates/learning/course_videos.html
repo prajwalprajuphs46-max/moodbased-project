@@ -1,0 +1,110 @@
+{% extends 'learning/base.html' %}
+
+{% block content %}
+<style>
+    /* 1. This is the key: it forces the color to fill the entire window */
+    .full-screen-bg {
+        background-color: #aebcce; /* You can change this hex code to any color you like */
+        min-height: 100vh;         /* 100% of the Viewport Height */
+        width: 100%;
+        position: absolute;        /* Ensures it ignores parent padding if necessary */
+        top: 0;
+        left: 0;
+        padding-top: 80px;         /* Keeps content from hiding behind your navbar */
+        padding-bottom: 50px;
+    }
+
+    /* 2. Professional Card Styling */
+    .video-card {
+        background-color: #ffffff;
+        border: none;
+        border-radius: 16px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        transition: transform 0.3s ease;
+    }
+
+    .video-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1) !important;
+    }
+
+    .lesson-header {
+        color: #2c3e50;
+        font-weight: 700;
+    }
+    .progress-wrapper { background: white; border-radius: 16px; padding: 20px 25px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 30px; }
+    .progress-track { height: 12px; border-radius: 6px; background: #e9ecef; overflow: hidden; }
+    .progress-fill { height: 100%; border-radius: 6px; background: linear-gradient(90deg, #0d6efd, #6610f2); transition: width 0.5s ease; }
+    .watched-badge { background: #d1e7dd; color: #0f5132; font-size: 0.75rem; padding: 3px 10px; border-radius: 20px; }
+    .btn-watch { font-size: 0.8rem; }
+</style>
+
+<div class="full-screen-bg">
+    <div class="container">
+        <h2 class="mb-4 fw-bold text-primary text-center lesson-header">
+            {{ course.title }} - Lessons
+        </h2>
+
+        <!-- Progress Bar -->
+        <div class="col-md-8 mx-auto">
+            <div class="progress-wrapper">
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="fw-bold">Course Progress</span>
+                    <span class="fw-bold text-primary">{{ watched_count }}/{{ total_videos }} videos &middot; {{ progress_pct }}%</span>
+                </div>
+                <div class="progress-track">
+                    <div class="progress-fill" style="width: {{ progress_pct }}%;"></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row">
+            {% for video in videos %}
+            <div class="col-md-8 mx-auto mb-4">
+                <div class="card video-card p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="fw-bold mb-0">
+                            <i class="bi bi-play-circle-fill text-primary me-2"></i>{{ video.title }}
+                        </h5>
+                        {% if video.is_watched %}
+                            <span class="watched-badge"><i class="bi bi-check-circle-fill me-1"></i>Watched</span>
+                        {% else %}
+                            <button class="btn btn-sm btn-outline-success rounded-pill btn-watch" onclick="markWatched({{ video.id }}, this)">
+                                <i class="bi bi-check2 me-1"></i>Mark as Watched
+                            </button>
+                        {% endif %}
+                    </div>
+                    <div class="ratio ratio-16x9 rounded shadow-sm overflow-hidden">
+                        <iframe src="{{ video.youtube_link }}" allowfullscreen></iframe>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="text-center mt-5">
+            <a href="{% url 'assignment_list' course.id %}" class="btn btn-primary btn-lg px-4 shadow-sm rounded-pill me-3">
+                <i class="fas fa-tasks me-2"></i>View Assignments
+            </a>
+            <a href="{% url 'take_quiz' course.id %}" class="btn btn-primary btn-lg px-4 shadow-sm rounded-pill">
+                <i class="fas fa-question-circle me-2"></i>Attempt Quiz
+            </a>
+        </div>
+    </div>
+</div>
+
+<script>
+function markWatched(videoId, btn) {
+    fetch(`/video/${videoId}/watched/`, {
+        method: 'POST',
+        headers: { 'X-CSRFToken': '{{ csrf_token }}' }
+    }).then(res => {
+        if (res.ok) {
+            btn.outerHTML = '<span class="watched-badge"><i class="bi bi-check-circle-fill me-1"></i>Watched</span>';
+            // Update progress bar
+            location.reload();
+        }
+    });
+}
+</script>
+{% endblock %}

@@ -1,0 +1,320 @@
+{% extends 'learning/base.html' %}
+
+{% block content %}
+
+<!-- Webcam Preview (floating corner) -->
+<div id="webcam-box">
+    <video id="webcam-preview" autoplay muted playsinline></video>
+    <div id="rec-indicator">
+        <span class="rec-dot"></span> REC
+    </div>
+</div>
+
+<!-- Camera Permission Banner -->
+<div id="camera-warning" class="alert alert-danger text-center fw-bold d-none" role="alert">
+    Camera access is required to take this quiz. Please allow camera permission and reload the page.
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card glass-card p-4 shadow-sm border-0">
+            <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3">
+                <h2 class="m-0">Quiz: {{ course.title }}</h2>
+                <div id="quiz-timer" class="badge bg-danger p-3 fs-5 shadow-sm">
+                    ⏱️ <span id="timer-clock">03:00</span>
+                </div>
+            </div>
+
+            <form method="post" id="quizForm">
+                {% csrf_token %}
+                
+                {% for quiz in quizzes %}
+                <div class="mb-4 p-3 rounded bg-light border-start border-primary border-4">
+                    <h5 class="fw-bold">{{ forloop.counter }}. {{ quiz.question }}</h5>
+                    
+                    {% for option in quiz.shuffled_options %}
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="radio" 
+                               name="{{ quiz.id }}" 
+                               id="q{{ quiz.id }}_{{ forloop.counter }}" 
+                               value="{{ option.id }}" required>
+                        <label class="form-check-label" for="q{{ quiz.id }}_{{ forloop.counter }}">
+                            {{ option.text }}
+                        </label>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endfor %}
+                
+                <button type="submit" class="btn btn-primary btn-lg w-100 shadow">Submit Answers</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ====== WEBCAM RECORDING SETUP ======
+    let mediaRecorder = null;
+    let recordedChunks = [];
+    let webcamStream = null;
+
+    function showCameraError(msg) {
+        const banner = document.getElementById('camera-warning');
+        banner.textContent = msg;
+        banner.classList.remove('d-none');
+        document.getElementById('webcam-box').style.display = 'none';
+        console.error("Camera error:", msg);
+    }
+
+    function pickSupportedMime() {
+        const candidates = [
+            'video/webm;codecs=vp9,opus',
+            'video/webm;codecs=vp8,opus',
+            'video/webm;codecs=vp9',
+            'video/webm;codecs=vp8',
+            'video/webm',
+            'video/mp4'
+        ];
+        for (const m of candidates) {
+            if (window.MediaRecorder && MediaRecorder.isTypeSupported(m)) return m;
+        }
+        return '';
+    }
+
+    async function startWebcamRecording() {
+        // 1. Secure-context / API availability check
+        if (!window.isSecureContext) {
+            showCameraError("Camera blocked: this page must be opened over HTTPS or via http://localhost / http://127.0.0.1 (current origin: " + location.origin + ").");
+            return;
+        }
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            showCameraError("Camera API not available in this browser. Please use an updated Chrome/Edge/Firefox.");
+            return;
+        }
+        if (!window.MediaRecorder) {
+            showCameraError("MediaRecorder API not supported in this browser.");
+            return;
+        }
+
+        // 2. Try video+audio, then video-only as a fallback
+        try {
+            try {
+                webcamStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+            } catch (innerErr) {
+                console.warn("video+audio failed, retrying video-only:", innerErr);
+                webcamStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+            }
+
+            const preview = document.getElementById('webcam-preview');
+            preview.srcObject = webcamStream;
+            try { await preview.play(); } catch (_) {}
+
+            const mimeType = pickSupportedMime();
+            mediaRecorder = mimeType
+                ? new MediaRecorder(webcamStream, { mimeType })
+                : new MediaRecorder(webcamStream);
+
+            mediaRecorder.ondataavailable = (e) => {
+                if (e.data && e.data.size > 0) recordedChunks.push(e.data);
+            };
+            mediaRecorder.onerror = (e) => console.error("MediaRecorder error:", e.error || e);
+            mediaRecorder.start(1000); // collect data every second
+        } catch (err) {
+            let msg = "Camera access failed: " + (err && err.name ? err.name : "") + " " + (err && err.message ? err.message : err);
+            if (err && err.name === 'NotAllowedError') {
+                msg = "Camera permission was denied. Click the camera icon in the address bar, allow access, then reload the page.";
+            } else if (err && err.name === 'NotFoundError') {
+                msg = "No camera was found on this device.";
+            } else if (err && err.name === 'NotReadableError') {
+                msg = "The camera is already in use by another application. Close it and reload the page.";
+            }
+            showCameraError(msg);
+        }
+    }
+
+    function stopRecordingAndUpload() {
+        return new Promise((resolve) => {
+            if (!mediaRecorder || mediaRecorder.state === 'inactive') {
+                resolve();
+                return;
+            }
+            mediaRecorder.onstop = () => {
+                const blob = new Blob(recordedChunks, { type: 'video/webm' });
+                const formData = new FormData();
+                formData.append('video', blob, 'quiz_recording.webm');
+
+                fetch("{% url 'save_quiz_recording' course.id %}", {
+                    method: 'POST',
+                    body: formData,
+                })
+                .then(() => resolve())
+                .catch(() => resolve()); // resolve even on error so quiz still submits
+            };
+            mediaRecorder.stop();
+            // Stop all camera tracks
+            if (webcamStream) {
+                webcamStream.getTracks().forEach(track => track.stop());
+            }
+        });
+    }
+
+    // Start recording when page loads
+    startWebcamRecording();
+
+    // ====== ORIGINAL QUIZ LOGIC ======
+    // 1. Timer Logic
+    let timeLeft = 180; 
+    const clockDisplay = document.getElementById('timer-clock');
+    const quizForm = document.getElementById('quizForm');
+
+    const countdown = setInterval(() => {
+        if (timeLeft <= 0) {
+            clearInterval(countdown);
+            alert("Time is up! Submitting automatically.");
+            submitQuiz();
+        } else {
+            let minutes = Math.floor(timeLeft / 60);
+            let seconds = timeLeft % 60;
+            clockDisplay.innerText = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            
+            if (timeLeft <= 30) {
+                document.getElementById('quiz-timer').classList.replace('bg-danger', 'bg-warning');
+                document.getElementById('quiz-timer').classList.add('text-dark', 'animate-pulse');
+            }
+        }
+        timeLeft -= 1;
+    }, 1000);
+
+    // 2. Anti-Tab Switching (2 Chances)
+    let tabSwitchCount = 0;
+    document.addEventListener("visibilitychange", function() {
+        if (document.hidden) {
+            tabSwitchCount++;
+            if (tabSwitchCount === 1) {
+                alert("⚠️ WARNING (Strike 1): Stay on this tab! Leaving again will submit your quiz automatically.");
+            } else if (tabSwitchCount >= 2) {
+                alert("Strike 2: Tab switching detected. Submitting quiz now.");
+                submitQuiz();
+            }
+        }
+    });
+
+    // Helper function: stop recording THEN submit quiz
+    async function submitQuiz() {
+        window.onbeforeunload = null;
+        clearInterval(countdown);
+        await stopRecordingAndUpload();
+        const inputs = quizForm.querySelectorAll('input[required]');
+        inputs.forEach(input => input.removeAttribute('required'));
+        quizForm.submit();
+    }
+
+    // 3. Prevent Back Button
+    window.history.pushState(null, null, window.location.href);
+    window.onpopstate = function () {
+        window.history.go(1);
+        alert("Back button disabled.");
+    };
+
+    // 4. Page Reload Warning
+    window.onbeforeunload = function() {
+        return "Progress will be lost!";
+    };
+
+    // On normal form submit, also upload recording first
+    quizForm.onsubmit = async function(e) {
+        e.preventDefault();
+        window.onbeforeunload = null;
+        clearInterval(countdown);
+        await stopRecordingAndUpload();
+        quizForm.submit();
+    };
+</script>
+
+<style>
+   /* 1. NUCLEAR HIDE: Optimized for 2026 browsers */
+    #moodbot-container, 
+    #chat-container,
+    #chat-widget,
+    .chatbot-button, 
+    .chat-box,
+    .moodbot-launcher,
+    [id*="moodbot"], 
+    [class*="chatbot"],
+    [id*="gemini"],
+    [class*="gemini"] {
+        display: none !important;
+        visibility: hidden !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+        position: fixed !important;
+        left: -9999px !important; /* Moves it off-screen just in case */
+    }
+    
+    .glass-card {
+        background: rgba(225, 193, 193, 0.95);
+        backdrop-filter: blur(10px);
+        border-radius: 15px;
+    }
+    .animate-pulse {
+        animation: pulse-red 1s infinite;
+    }
+    @keyframes pulse-red {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+        100% { transform: scale(1); }
+    }
+    body {
+        -webkit-user-select: none;
+        user-select: none;
+    }
+
+    /* Webcam Preview Styles */
+    #webcam-box {
+        position: fixed;
+        top: 15px;
+        right: 15px;
+        width: 200px;
+        height: 150px;
+        border: 3px solid #dc3545;
+        border-radius: 12px;
+        overflow: hidden;
+        z-index: 9999;
+        box-shadow: 0 4px 15px rgba(220, 53, 69, 0.4);
+        background: #000;
+    }
+    #webcam-preview {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transform: scaleX(-1);
+    }
+    #rec-indicator {
+        position: absolute;
+        top: 6px;
+        left: 8px;
+        background: rgba(220, 53, 69, 0.9);
+        color: #fff;
+        padding: 2px 8px;
+        border-radius: 6px;
+        font-size: 11px;
+        font-weight: bold;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+    .rec-dot {
+        width: 8px;
+        height: 8px;
+        background: #fff;
+        border-radius: 50%;
+        animation: blink-rec 1s infinite;
+    }
+    @keyframes blink-rec {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0; }
+    }
+    
+</style>
+
+{% endblock %}
