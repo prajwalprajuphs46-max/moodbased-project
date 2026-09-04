@@ -1,0 +1,89 @@
+/* =========================================================
+   Project-wide admin styling overrides
+   ========================================================= */
+
+/* Bigger, more readable base font in admin (change lists, forms, etc.) */
+html, body { font-size: 17px !important; }
+body, .content, .main-content, .container-fluid, .table, .form-control,
+.content-wrapper, .card, .card-body, p, label, span, td, th, li, a {
+    font-size: 17px !important;
+}
+
+/* Change-list table */
+#result_list,
+#result_list th,
+#result_list td,
+#result_list td a {
+    font-size: 17px !important;
+    line-height: 1.55 !important;
+}
+#result_list thead th {
+    font-size: 15px !important;
+    text-transform: uppercase;
+    letter-spacing: .4px;
+}
+
+/* === Fix mojibake sort indicators ===
+   Jazzmin/AdminLTE uses FontAwesome <i class="fas fa-sort..."></i>, which
+   renders as garbage glyphs when the FontAwesome webfont fails to load.
+   We hide *every* FA icon inside list-table headers and toolbars, then
+   emit our own arrows via CSS content using safe Unicode. */
+#result_list i,
+#result_list .fa,
+#result_list .fas,
+#result_list .far,
+#result_list .fab,
+#changelist i,
+#changelist .fa,
+#changelist .fas,
+#changelist .far,
+#changelist .fab,
+.sortoptions i,
+.sortoptions .fa,
+.sortoptions .fas,
+table thead th i,
+table thead th .fa,
+table thead th .fas,
+table thead th .far {
+    display: none !important;
+}
+
+/* Replacement arrows on sorted columns */
+table thead th.sorted .text::after,
+table thead th.sorted a::after {
+    display: inline-block;
+    margin-left: 6px;
+    font-family: system-ui, "Segoe UI", "Arial", sans-serif !important;
+    font-size: 11px;
+    opacity: .85;
+}
+table thead th.sorted.ascending .text::after,
+table thead th.sorted.ascending a::after { content: "\2191"; }   /* ↑ */
+table thead th.sorted.descending .text::after,
+table thead th.sorted.descending a::after { content: "\2193"; }  /* ↓ */
+
+/* Sort priority/remove links in the small sortoptions row */
+.sortoptions .sortremove::before  { content: "\2715"; }   /* ✕ */
+.sortoptions .toggle.ascending::before  { content: "\2191"; }
+.sortoptions .toggle.descending::before { content: "\2193"; }
+.sortoptions .sortpriority { font-size: 11px; opacity: .75; }
+
+/* Better filter/search inputs */
+.filter-options .form-control,
+input[type="text"], input[type="email"], input[type="password"],
+input[type="search"], textarea, select {
+    font-size: 15px !important;
+}
+
+/* Headings */
+h1 { font-size: 1.75rem !important; }
+h2 { font-size: 1.25rem !important; }
+h3 { font-size: 1.1rem !important; }
+
+/* Action dropdown + buttons */
+.actions select, .actions button, .button, input[type=submit], .submit-row a {
+    font-size: 14px !important;
+}
+
+/* Breadcrumbs */
+.breadcrumb { font-size: 13.5px !important; }
