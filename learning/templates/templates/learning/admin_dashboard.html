@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mood Learning | Admin Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-dark: #4338ca;
+            --primary-soft: #eef2ff;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger:  #ef4444;
+            --info:    #06b6d4;
+            --purple:  #8b5cf6;
+            --pink:    #ec4899;
+            --bg:      #1f2937;
+            --card:    #2c3035;
+            --text:    #f3f4f6;
+            --muted:   #9ca3af;
+            --border:  #3a3f47;
+        }
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            margin: 0;
+        }
+
+        /* ===== SIDEBAR ===== */
+        .sidebar {
+            position: fixed;
+            top: 0; left: 0; bottom: 0;
+            width: 250px;
+            background: #0f172a;
+            color: #cbd5e1;
+            padding: 1.5rem 0;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 4px 0 18px rgba(0,0,0,.05);
+            z-index: 100;
+        }
+        .sidebar-brand {
+            display: flex; align-items: center; gap: 12px;
+            padding: 0 1.5rem 1.75rem;
+            border-bottom: 1px solid rgba(255,255,255,.06);
+        }
+        .sidebar-brand .logo {
+            width: 40px; height: 40px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, var(--primary), var(--purple));
+            display: flex; align-items: center; justify-content: center;
+            color: #fff; font-size: 1.1rem;
+        }
+        .sidebar-brand h4 { color: #fff; margin: 0; font-weight: 700; font-size: 1.05rem; letter-spacing: -.3px; }
+        .sidebar-brand small { color: #64748b; font-size: .72rem; text-transform: uppercase; letter-spacing: 1px; }
+
+        .nav-section-title {
+            padding: 1.2rem 1.5rem .5rem;
+            font-size: .7rem;
+            color: #475569;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            font-weight: 600;
+        }
+        .nav-flex-column { padding: 0 .75rem; display: flex; flex-direction: column; gap: 4px; }
+        .nav-link {
+            color: #94a3b8;
+            padding: 11px 14px;
+            display: flex; align-items: center; gap: 12px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 500; font-size: .92rem;
+            transition: all .2s ease;
+        }
+        .nav-link i { width: 20px; text-align: center; font-size: 1rem; }
+        .nav-link:hover { color: #fff; background: rgba(255,255,255,.05); }
+        .nav-link.active {
+            background: linear-gradient(135deg, var(--primary), var(--purple));
+            color: #fff;
+            box-shadow: 0 6px 14px rgba(79,70,229,.35);
+        }
+        .logout-link { color: #f87171 !important; margin-top: auto; }
+        .logout-link:hover { background: rgba(248,113,113,.08) !important; }
+
+        /* ===== MAIN ===== */
+        main {
+            margin-left: 250px;
+            padding: 1.75rem 2.25rem 3rem;
+        }
+        .topbar {
+            display: flex; justify-content: space-between; align-items: center;
+            padding-bottom: 1rem; margin-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border);
+            flex-wrap: wrap; gap: 1rem;
+        }
+        .topbar h1 { margin: 0; font-size: 1.6rem; font-weight: 700; letter-spacing: -.5px; }
+        .topbar .subtitle { color: var(--muted); font-size: .9rem; margin-top: 4px; }
+        .user-pill {
+            display: inline-flex; align-items: center; gap: 10px;
+            background: var(--card); border: 1px solid var(--border);
+            padding: 6px 14px 6px 6px; border-radius: 999px;
+            font-size: .88rem; font-weight: 500;
+            box-shadow: 0 1px 2px rgba(0,0,0,.03);
+        }
+        .user-pill .avatar {
+            width: 32px; height: 32px; border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), var(--purple));
+            color: #fff; display: flex; align-items: center; justify-content: center;
+            font-weight: 600; font-size: .85rem;
+        }
+        .back-btn { color: var(--muted); text-decoration: none; font-weight: 500; font-size: .88rem; }
+        .back-btn:hover { color: var(--primary); }
+
+        /* ===== STAT CARDS ===== */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1.1rem;
+            margin-bottom: 1.5rem;
+        }
+        .stat-card {
+            background: var(--card);
+            border-radius: 14px;
+            padding: 1.2rem 1.25rem;
+            border: 1px solid var(--border);
+            box-shadow: 0 1px 3px rgba(0,0,0,.04);
+            transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+            position: relative; overflow: hidden;
+            display: block;
+            text-decoration: none;
+            color: inherit;
+            cursor: pointer;
+        }
+        .stat-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(0,0,0,.08);
+            border-color: var(--primary);
+            color: inherit;
+        }
+        .stat-card:focus-visible {
+            outline: 2px solid var(--primary);
+            outline-offset: 2px;
+        }
+        .stat-card .label { color: var(--muted); font-size: .78rem; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; }
+        .stat-card .value { font-size: 1.85rem; font-weight: 700; margin: 6px 0 4px; letter-spacing: -.5px; }
+        .stat-card .delta { font-size: .8rem; color: var(--success); font-weight: 600; }
+        .stat-card .icon-box {
+            position: absolute; top: 1.1rem; right: 1.1rem;
+            width: 42px; height: 42px; border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            color: #fff; font-size: 1.05rem;
+        }
+        .icon-students    { background: linear-gradient(135deg,#4f46e5,#8b5cf6); }
+        .icon-courses     { background: linear-gradient(135deg,#06b6d4,#0ea5e9); }
+        .icon-enrollments { background: linear-gradient(135deg,#10b981,#059669); }
+        .icon-recordings  { background: linear-gradient(135deg,#ef4444,#f97316); }
+        .icon-certs       { background: linear-gradient(135deg,#f59e0b,#f43f5e); }
+        .icon-subs        { background: linear-gradient(135deg,#ec4899,#db2777); }
+        .icon-staff       { background: linear-gradient(135deg,#64748b,#334155); }
+
+        /* ===== PANELS ===== */
+        .panel {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 1.4rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,.04);
+        }
+        .panel-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 1rem;
+        }
+        .panel-header h5 { margin: 0; font-weight: 700; font-size: 1rem; }
+        .panel-header .muted-icon { color: var(--muted); }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.25rem;
+            margin-bottom: 1.5rem;
+        }
+        @media (max-width: 992px) { .grid-2 { grid-template-columns: 1fr; } }
+
+        /* ===== TABLE ===== */
+        .table thead th {
+            background: #262a30;
+            color: var(--muted);
+            font-size: .78rem;
+            text-transform: uppercase;
+            letter-spacing: .5px;
+            font-weight: 600;
+            border-bottom: 1px solid var(--border);
+        }
+        .table tbody tr { transition: background .15s; color: var(--text); }
+        .table tbody tr:hover { background: #353a42; }
+        .table tbody td { border-color: var(--border); }
+        .avatar-sm {
+            width: 36px; height: 36px; border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary-soft), #fff);
+            color: var(--primary);
+            display: inline-flex; align-items: center; justify-content: center;
+            font-weight: 600; font-size: .85rem;
+            border: 1px solid var(--border);
+        }
+        .badge-soft-success { background: #d1fae5; color: #047857; font-weight: 600; }
+        .badge-soft-info    { background: #cffafe; color: #0e7490; font-weight: 600; }
+        .badge-soft-muted   { background: #f1f5f9; color: #475569; font-weight: 600; }
+
+        .empty-state {
+            text-align: center; padding: 2.5rem 1rem; color: var(--muted);
+        }
+        .empty-state i { font-size: 2rem; display: block; margin-bottom: .5rem; opacity: .5; }
+
+        /* ===== SEARCH ===== */
+        .search-wrap {
+            position: relative;
+        }
+        .search-wrap i {
+            position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+            color: var(--muted);
+        }
+        .search-wrap input {
+            padding-left: 36px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            font-size: .9rem;
+            min-width: 240px;
+        }
+
+        /* ===== MOOD LEGEND ===== */
+        .mood-legend { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 1rem; }
+        .mood-legend .item { display: flex; align-items: center; gap: 8px; font-size: .85rem; color: var(--muted); }
+        .mood-legend .dot { width: 10px; height: 10px; border-radius: 50%; }
+
+        /* ===== TOP COURSES ===== */
+        .course-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px dashed var(--border); }
+        .course-row:last-child { border-bottom: none; }
+        .course-bar {
+            flex: 1; margin: 0 14px; height: 8px; background: #3a3f47; border-radius: 999px; overflow: hidden;
+        }
+        .course-bar > span {
+            display: block; height: 100%;
+            background: linear-gradient(90deg, var(--primary), var(--purple));
+            border-radius: 999px;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar { transform: translateX(-100%); }
+            main { margin-left: 0; padding: 1rem; }
+        }
+    </style>
+</head>
+<body>
+
+<nav class="sidebar">
+    <div class="sidebar-brand">
+        <div class="logo"><i class="fas fa-smile-beam"></i></div>
+        <div>
+            <h4>Mood Learning</h4>
+            <small>Admin Console</small>
+        </div>
+    </div>
+
+    <div class="nav-section-title">Main</div>
+    <div class="nav-flex-column">
+        <a class="nav-link active" href="{% url 'admin_dashboard' %}">
+            <i class="fas fa-th-large"></i><span>Dashboard</span>
+        </a>
+        <a class="nav-link" href="{% url 'admin:index' %}">
+            <i class="fas fa-database"></i><span>Manage Database</span>
+        </a>
+        <a class="nav-link" href="{% url 'admin:auth_user_changelist' %}">
+            <i class="fas fa-users"></i><span>Users</span>
+        </a>
+        <a class="nav-link" href="{% url 'admin:learning_course_changelist' %}">
+            <i class="fas fa-book-open"></i><span>Courses</span>
+        </a>
+        <a class="nav-link" href="{% url 'admin:learning_quizrecording_changelist' %}">
+            <i class="fas fa-video"></i><span>Quiz Recordings</span>
+        </a>
+    </div>
+
+    <div class="nav-section-title">Account</div>
+    <div class="nav-flex-column">
+        <a class="nav-link" href="{% url 'index' %}">
+            <i class="fas fa-arrow-left"></i><span>Back to Site</span>
+        </a>
+        <a class="nav-link logout-link" href="{% url 'logout' %}">
+            <i class="fas fa-power-off"></i><span>Logout</span>
+        </a>
+    </div>
+</nav>
+
+<main>
+    <!-- Topbar -->
+    <div class="topbar">
+        <div>
+            <h1>Admin Dashboard</h1>
+            <div class="subtitle">Welcome back, monitor student engagement and platform activity at a glance.</div>
+        </div>
+        <div class="d-flex align-items-center gap-3">
+            <a href="{% url 'index' %}" class="back-btn"><i class="fas fa-arrow-left me-1"></i> Main site</a>
+            <span class="user-pill">
+                <span class="avatar">{{ user.username|slice:":1"|upper }}</span>
+                <span>{{ user.username }} <small class="text-muted">· admin</small></span>
+            </span>
+        </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-grid">
+        <a class="stat-card" href="{% url 'admin:auth_user_changelist' %}">
+            <div class="icon-box icon-students"><i class="fas fa-user-graduate"></i></div>
+            <div class="label">Total Students</div>
+            <div class="value">{{ total_students }}</div>
+            <div class="delta"><i class="fas fa-arrow-up"></i> {{ new_students_week }} new this week</div>
+        </a>
+        <a class="stat-card" href="{% url 'admin:learning_course_changelist' %}">
+            <div class="icon-box icon-courses"><i class="fas fa-book"></i></div>
+            <div class="label">Courses</div>
+            <div class="value">{{ total_courses }}</div>
+            <div class="delta" style="color:var(--muted);">Across all streams</div>
+        </a>
+        <a class="stat-card" href="{% url 'admin:learning_enrollment_changelist' %}">
+            <div class="icon-box icon-enrollments"><i class="fas fa-user-check"></i></div>
+            <div class="label">Enrollments</div>
+            <div class="value">{{ total_enrollments }}</div>
+            <div class="delta" style="color:var(--muted);">Paid + free combined</div>
+        </a>
+        <a class="stat-card" href="{% url 'admin:learning_quizrecording_changelist' %}">
+            <div class="icon-box icon-recordings"><i class="fas fa-video"></i></div>
+            <div class="label">Quiz Recordings</div>
+            <div class="value">{{ total_recordings }}</div>
+            <div class="delta" style="color:var(--muted);">Webcam proctoring</div>
+        </a>
+        <a class="stat-card" href="{% url 'admin:learning_certificate_changelist' %}">
+            <div class="icon-box icon-certs"><i class="fas fa-award"></i></div>
+            <div class="label">Certificates Issued</div>
+            <div class="value">{{ total_certificates }}</div>
+            <div class="delta" style="color:var(--muted);">Completed quizzes</div>
+        </a>
+        <a class="stat-card" href="{% url 'admin:learning_assignmentsubmission_changelist' %}">
+            <div class="icon-box icon-subs"><i class="fas fa-file-upload"></i></div>
+            <div class="label">Assignments</div>
+            <div class="value">{{ total_submissions }}</div>
+            <div class="delta" style="color:var(--muted);">Submitted by students</div>
+        </a>
+        <a class="stat-card" href="{% url 'admin:auth_user_changelist' %}?is_staff__exact=1">
+            <div class="icon-box icon-staff"><i class="fas fa-user-shield"></i></div>
+            <div class="label">Staff Members</div>
+            <div class="value">{{ total_staff }}</div>
+            <div class="delta" style="color:var(--muted);">Including superusers</div>
+        </a>
+    </div>
+
+    <!-- Mood + Top Courses -->
+    <div class="grid-2">
+        <div class="panel">
+            <div class="panel-header">
+                <h5><i class="fas fa-smile me-2 text-primary"></i>Mood Distribution</h5>
+                <span class="muted-icon"><i class="fas fa-chart-pie"></i></span>
+            </div>
+            {% if mood_labels %}
+                <canvas id="moodChart" height="180"></canvas>
+                <div class="mood-legend" id="moodLegend"></div>
+            {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-chart-pie"></i>
+                    No mood data captured yet.
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="panel">
+            <div class="panel-header">
+                <h5><i class="fas fa-fire me-2 text-danger"></i>Top Enrolled Courses</h5>
+                <span class="muted-icon"><i class="fas fa-trophy"></i></span>
+            </div>
+            {% if top_courses %}
+                {% for c in top_courses %}
+                    <div class="course-row">
+                        <div style="min-width:140px; font-weight:500;">{{ c.course__title|default:"Untitled" }}</div>
+                        <div class="course-bar"><span style="width: {% widthratio c.total top_courses.0.total 100 %}%"></span></div>
+                        <div class="text-muted small fw-semibold">{{ c.total }}</div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-book"></i>
+                    No enrollments yet.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Recent recordings -->
+    <div class="panel mb-4">
+        <div class="panel-header">
+            <h5><i class="fas fa-clock me-2 text-info"></i>Recent Quiz Recordings</h5>
+            <a href="{% url 'admin:learning_quizrecording_changelist' %}" class="btn btn-sm btn-outline-primary">View all</a>
+        </div>
+        <div class="table-responsive">
+            <table class="table align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Student</th>
+                        <th>Course</th>
+                        <th>Recorded At</th>
+                        <th class="text-end">Video</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in recent_recordings %}
+                        <tr>
+                            <td>
+                                <span class="avatar-sm me-2">{{ r.user.username|slice:":1"|upper }}</span>
+                                <strong>{{ r.user.username }}</strong>
+                            </td>
+                            <td>{{ r.course.title }}</td>
+                            <td><span class="text-muted">{{ r.recorded_at|date:"M d, Y H:i" }}</span></td>
+                            <td class="text-end">
+                                {% if r.video %}
+                                    <a href="{{ r.video.url }}" target="_blank" class="btn btn-sm btn-outline-secondary">
+                                        <i class="fas fa-play me-1"></i> View
+                                    </a>
+                                {% else %}
+                                    <span class="text-muted small">—</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr><td colspan="4"><div class="empty-state"><i class="fas fa-video-slash"></i>No recordings yet.</div></td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Students table -->
+    <div class="panel">
+        <div class="panel-header">
+            <h5><i class="fas fa-users me-2 text-primary"></i>Registered Students</h5>
+            <form method="get" class="search-wrap">
+                <i class="fas fa-search"></i>
+                <input type="text" name="q" value="{{ search_query }}" class="form-control form-control-sm" placeholder="Search username or email...">
+            </form>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>Student</th>
+                        <th>Email</th>
+                        <th>Joined</th>
+                        <th>Status</th>
+                        <th class="text-end">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for student in students %}
+                        <tr>
+                            <td>
+                                <span class="avatar-sm me-2">{{ student.username|slice:":1"|upper }}</span>
+                                <strong>{{ student.username }}</strong>
+                                {% if student.first_name or student.last_name %}
+                                    <div class="text-muted small">{{ student.first_name }} {{ student.last_name }}</div>
+                                {% endif %}
+                            </td>
+                            <td>{{ student.email|default:"—" }}</td>
+                            <td><span class="text-muted">{{ student.date_joined|date:"M d, Y" }}</span></td>
+                            <td>
+                                {% if student.is_active %}
+                                    <span class="badge badge-soft-success">Active</span>
+                                {% else %}
+                                    <span class="badge badge-soft-muted">Inactive</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end">
+                                <a href="{% url 'admin:auth_user_change' student.id %}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-edit me-1"></i> Edit
+                                </a>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="5">
+                                <div class="empty-state">
+                                    <i class="fas fa-user-slash"></i>
+                                    {% if search_query %}No students match "{{ search_query }}".{% else %}No students registered yet.{% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+    const moodLabels = {{ mood_labels|safe }};
+    const moodValues = {{ mood_values|safe }};
+    const palette = ['#4f46e5','#10b981','#f59e0b','#ef4444','#06b6d4','#ec4899','#8b5cf6'];
+
+    if (moodLabels && moodLabels.length) {
+        const ctx = document.getElementById('moodChart');
+        if (ctx) {
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: moodLabels,
+                    datasets: [{
+                        data: moodValues,
+                        backgroundColor: moodLabels.map((_, i) => palette[i % palette.length]),
+                        borderWidth: 0,
+                        hoverOffset: 6
+                    }]
+                },
+                options: {
+                    cutout: '65%',
+                    plugins: { legend: { display: false } },
+                    maintainAspectRatio: false
+                }
+            });
+            const legend = document.getElementById('moodLegend');
+            moodLabels.forEach((label, i) => {
+                const item = document.createElement('div');
+                item.className = 'item';
+                item.innerHTML = `<span class="dot" style="background:${palette[i % palette.length]}"></span>${label} <strong style="color:var(--text); margin-left:4px;">${moodValues[i]}</strong>`;
+                legend.appendChild(item);
+            });
+        }
+    }
+</script>
+</body>
+</html>

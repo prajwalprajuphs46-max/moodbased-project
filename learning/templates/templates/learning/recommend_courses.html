@@ -1,0 +1,262 @@
+{% extends 'learning/base.html' %}
+
+{% block content %}
+<style>
+    /* Main Background and Layout */
+    .full-screen-bg {
+        background-color: #f8fafc;
+        min-height: 100vh;
+        width: 100%;
+        padding: 40px 0;
+    }
+
+    /* Primary Sidebar Card - Holds the Filter list */
+    .side-menu-card {
+        background: white;
+        border-radius: 20px;
+        padding: 25px 15px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+        display: block; 
+        width: 100%;
+    }
+
+    /* Menu Item Styling */
+    .menu-list {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .menu-link {
+        display: block;
+        padding: 12px 20px;
+        text-decoration: none;
+        color: #64748b;
+        font-weight: 500;
+        border-radius: 12px;
+        transition: all 0.2s ease;
+        font-size: 0.95rem;
+    }
+
+    .menu-link:hover {
+        background-color: #f1f5f9;
+        color: #1e293b;
+    }
+
+    /* The Rounded Blue Active State */
+    .menu-link.active {
+        background-color: #0d6efd !important;
+        color: white !important;
+        box-shadow: 0 4px 12px rgba(13, 110, 253, 0.25);
+    }
+
+    /* Learning Tools Section */
+    .learning-tools-section {
+        margin-top: 25px;
+        padding: 20px;
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+    }
+
+    .tool-link {
+        display: flex;
+        align-items: center;
+        padding: 12px 10px;
+        color: #64748b;
+        text-decoration: none;
+        font-size: 0.9rem;
+        transition: all 0.2s;
+        border-radius: 10px;
+    }
+
+    .tool-link:hover { 
+        color: #0d6efd; 
+        background-color: #f8fafc;
+    }
+
+    /* Course Grid and Card Styling */
+    .course-card { 
+        border: none;
+        border-radius: 18px;
+        overflow: hidden;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .course-card:hover { 
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important;
+    }
+    
+    .text-truncate-2 {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;  
+        overflow: hidden;
+    }
+
+    .level-badge {
+        font-size: 0.75rem;
+        font-weight: 700;
+        padding: 5px 10px;
+        border-radius: 8px;
+    }
+
+    /* Form-based button alignment */
+    .payment-form {
+        margin: 0;
+    }
+</style>
+
+<div class="full-screen-bg">
+    <div class="container-fluid px-lg-5">
+        <div class="row">
+            <div class="col-md-3 col-lg-2">
+                <div class="sticky-top" style="top: 100px;">
+                    
+                    <div class="side-menu-card">
+                        <h6 class="fw-bold text-uppercase small text-muted mb-4 px-3">Filter by Stream</h6>
+                        <div class="menu-list">
+                            <a href="?mood={{ selected_mood }}" 
+                               class="menu-link {% if not selected_stream %}active{% endif %}">
+                                All Categories
+                            </a>
+                            
+                            {% for s in streams %}
+                            <a href="?mood={{ selected_mood }}&stream={{ s.id }}" 
+                               class="menu-link {% if selected_stream == s.id|stringformat:'s' %}active{% endif %}">
+                                {{ s.name }}
+                            </a>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <div class="learning-tools-section">
+                        <h6 class="fw-bold small text-uppercase text-muted mb-3">Learning Tools</h6>
+                        
+                        {% if course %}
+                            <a href="{% url 'course_tools' course.id %}" class="tool-link">
+                                <span class="me-2">📄</span> PPT Notes
+                            </a>
+                            <a href="{% url 'course_tools' course.id %}" class="tool-link">
+                                <span class="me-2">🎧</span> Audio Lessons
+                            </a>
+                        {% else %}
+                            <span class="tool-link text-muted" style="cursor: not-allowed; opacity: 0.6;">
+                                <span class="me-2">📄</span> Select a Course
+                            </span>
+                            <span class="tool-link text-muted" style="cursor: not-allowed; opacity: 0.6;">
+                                <span class="me-2">🎧</span> to view tools
+                            </span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-9 col-lg-10 ps-4">
+                <h2 class="fw-bold mb-4">Recommended for <span class="text-primary">"{{ selected_mood|default:'Your' }}"</span> Mood</h2>
+
+                <div class="mb-5">
+                    <h3 class="fw-bold border-start border-4 border-primary ps-3 mb-4">Undergraduate (UG) Courses</h3>
+                    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+                        {% for course in ug_courses %}
+                        <div class="col">
+                            <div class="card course-card h-100 shadow-sm border-0">
+                                <div class="position-relative">
+                                    <img src="{% if course.image %}{{ course.image.url }}{% else %}https://via.placeholder.com/350x180{% endif %}" class="card-img-top" style="height: 180px; object-fit: cover; border-radius: 12px 12px 0 0;">
+                                    <span class="badge bg-info level-badge position-absolute top-0 start-0 m-2">UG</span>
+                                </div>
+                                <div class="card-body p-4">
+                                    <h5 class="fw-bold text-truncate">{{ course.title }}</h5>
+                                    <div class="mb-2">
+                                        {% for i in "12345" %}
+                                            <span class="{% if forloop.counter <= course.rating|default:4 %}text-warning{% else %}text-muted{% endif %} small">★</span>
+                                        {% endfor %}
+                                    </div>
+                                    <p class="text-muted small text-truncate-2" style="height: 40px;">
+                                        {{ course.description|default:"Enhance your skills with this mood-based learning module." }}
+                                    </p>
+                                    <p class="text-primary fw-bold fs-5">
+                                        {% if course.price > 0 %}₹{{ course.price }}{% else %}₹0.00{% endif %}
+                                    </p>
+                                    <div class="d-flex justify-content-between align-items-center mt-3">
+                                        <div class="d-flex gap-2">
+                                            {% if course.ppt_file %}<span title="PPT Available">📄</span>{% endif %}
+                                            {% if course.audio_file %}<span title="Audio Available">🎧</span>{% endif %}
+                                        </div>
+                                        
+                                        {% if course.id in enrolled_course_ids %}
+                                        <a href="{% url 'course_videos' course.id %}" class="btn btn-success rounded-pill px-4">Start Learning</a>
+                                        {% elif course.price > 0 %}
+                                        <a href="{% url 'payment_page' course.id %}" class="btn btn-primary rounded-pill px-4">Pay & Enroll</a>
+                                        {% else %}
+                                        <a href="{% url 'course_videos' course.id %}" class="btn btn-success rounded-pill px-4">View Now</a>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="mb-5">
+                    <h3 class="fw-bold border-start border-4 border-dark ps-3 mb-4">Postgraduate (PG) Courses</h3>
+                    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+                        {% for course in pg_courses %}
+                        <div class="col">
+                            <div class="card course-card h-100 shadow-sm border-0">
+                                <div class="position-relative">
+                                    <img src="{% if course.image %}{{ course.image.url }}{% else %}https://via.placeholder.com/350x180{% endif %}" class="card-img-top" style="height: 180px; object-fit: cover; border-radius: 12px 12px 0 0;">
+                                    <span class="badge bg-dark level-badge position-absolute top-0 start-0 m-2">PG</span>
+                                    {% if not course.price or course.price == 0 %}
+                                        <span class="badge bg-success position-absolute top-0 end-0 m-2">FREE</span>
+                                    {% endif %}
+                                </div>
+                                <div class="card-body p-4">
+                                    <h5 class="fw-bold text-truncate">{{ course.title }}</h5>
+                                    <div class="mb-2">
+                                        {% for i in "12345" %}
+                                            <span class="{% if forloop.counter <= course.rating|default:4 %}text-warning{% else %}text-muted{% endif %} small">★</span>
+                                        {% endfor %}
+                                    </div>
+                                    <p class="text-muted small text-truncate-2" style="height: 40px;">
+                                        {{ course.description|default:"Advanced learning module for postgraduate studies." }}
+                                    </p>
+                                    <p class="text-primary fw-bold fs-5">
+                                        {% if course.price > 0 %}₹{{ course.price }}{% else %}₹0.00{% endif %}
+                                    </p>
+                                    <div class="d-flex justify-content-between align-items-center mt-3">
+                                        <div class="d-flex gap-2">
+                                            {% if course.ppt_file %}<span title="PPT Available">📄</span>{% endif %}
+                                            {% if course.audio_file %}<span title="Audio Available">🎧</span>{% endif %}
+                                        </div>
+
+                                        {% if course.id in enrolled_course_ids %}
+                                        <a href="{% url 'course_videos' course.id %}" class="btn btn-success rounded-pill px-4">Start Learning</a>
+                                        {% elif course.price > 0 %}
+                                        <a href="{% url 'payment_page' course.id %}" class="btn btn-primary rounded-pill px-4">Pay & Enroll</a>
+                                        {% else %}
+                                        <a href="{% url 'course_videos' course.id %}" class="btn btn-success rounded-pill px-4">View Now</a>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                {% if not ug_courses and not pg_courses %}
+                <div class="text-center py-5">
+                    <h4 class="text-muted">No courses found matching your criteria.</h4>
+                    <a href="{% url 'mood_select' %}" class="btn btn-outline-primary rounded-pill mt-3">Try Another Mood</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

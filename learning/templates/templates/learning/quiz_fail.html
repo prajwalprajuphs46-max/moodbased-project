@@ -1,0 +1,85 @@
+{% extends 'learning/base.html' %}
+
+{% block content %}
+<style>
+    .fail-viewport {
+        min-height: 100vh;
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(rgba(30, 41, 59, 0.85), rgba(30, 41, 59, 0.85)), 
+                    url('https://images.unsplash.com/photo-1516321318423-f06f85e504b3?ixlib=rb-1.2.1&auto=format&fit=crop&w=1920&q=80');
+        background-size: cover;
+        background-position: center;
+    }
+
+    .glass-card-dark {
+        background: rgba(255, 255, 255, 0.98);
+        border-radius: 24px;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+    }
+
+    .score-circle-fail {
+        width: 120px;
+        height: 120px;
+        border: 5px solid #f59e0b;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto;
+        font-size: 2rem;
+        font-weight: 800;
+        color: #f59e0b;
+    }
+
+    .btn-retry {
+        background: #3b82f6;
+        color: white;
+        padding: 15px;
+        font-weight: 700;
+        border-radius: 12px;
+        border: none;
+    }
+
+    .btn-retry:hover {
+        background: #2563eb;
+        color: white;
+    }
+</style>
+
+<div class="fail-viewport">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-6 col-lg-5 text-center">
+                <div class="card glass-card-dark p-5">
+                    <div class="mb-4">
+                        <i class="fas fa-book-reader text-primary mb-3" style="font-size: 4rem;"></i>
+                        <h1 class="fw-bold text-dark">Keep Going!</h1>
+                        <p class="text-muted">You're almost there. A little more practice will get you that certificate.</p>
+                    </div>
+
+                    <div class="score-circle-fail mb-4">
+                        {{ score }}<span style="font-size: 1rem; color: #64748b;">/{{ total }}</span>
+                    </div>
+
+                    <p class="small text-danger fw-bold mb-4">Aim for 3+ marks to unlock your certificate.</p>
+
+                    <div class="d-grid gap-3">
+                        <a href="{{ review_url }}" class="btn btn-outline-dark rounded-pill shadow-sm">
+                            <i class="bi bi-eye me-1"></i> Review Answers
+                        </a>
+                        <a href="{% url 'take_quiz' course.id %}" class="btn btn-retry shadow-sm">
+                            <i class="fas fa-redo me-2"></i> Try Quiz Again
+                        </a>
+                        <a href="{% url 'mood_select' %}" class="btn btn-light text-muted rounded-pill">
+                            Switch Learning Mood
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

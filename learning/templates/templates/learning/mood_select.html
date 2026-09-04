@@ -1,0 +1,175 @@
+{% include 'learning/navbar.html' %}
+
+{% block content %}
+<style>
+    /* 1. Animated Light Gradient Background */
+    .mood-selection-wrapper {
+        background: linear-gradient(-45deg, #f2d696, #acc9e0, #c1e8c3, #d8aae2);
+        background-size: 400% 400%;
+        animation: gradientAnimation 15s ease infinite;
+        min-height: 100vh;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding-top: 50px;
+        padding-bottom: 50px;
+    }
+
+    @keyframes gradientAnimation {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+    }
+
+    /* 2. Main Container Card */
+    .mood-container-card {
+        background: rgba(255, 255, 255, 0.8);
+        backdrop-filter: blur(10px);
+        border-radius: 20px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        padding: 40px;
+        width: 100%;
+        max-width: 1000px;
+    }
+
+    /* KEEPING YOUR ORIGINAL ALIGNMENT */
+    .mood-row {
+        display: flex;
+        justify-content: space-evenly;
+        gap: 25px;
+        flex-wrap: wrap;
+        margin-top: 15px;
+    }
+
+    .mood-card {
+        width: 200px;
+        height: 180px;
+        background: white;
+        border-radius: 12px;
+        border-top: 5px solid transparent; 
+        box-shadow: 0 5px 15px rgba(0,0,0,0.06);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .emoji {
+        font-size: 38px;
+        transition: transform 0.3s ease;
+    }
+
+    .mood-text {
+        margin-top: 10px;
+        font-weight: 500;
+        color: #444;
+    }
+
+    /* TOP BORDER COLORS */
+    .happy { border-top-color: #fbc02d; }   
+    .sad { border-top-color: #42a5f5; }     
+    .focused { border-top-color: #66bb6a; } 
+    .tired { border-top-color: #ab47bc; }   
+
+    /* LIGHT COLOR HOVER EFFECTS */
+    .happy:hover { 
+        background-color: #fffde7; 
+        transform: translateY(-8px);
+        box-shadow: 0 12px 20px rgba(251, 192, 45, 0.2);
+    }
+    .happy:hover .emoji { transform: scale(1.2) rotate(10deg); }
+
+    .sad:hover { 
+        background-color: #e3f2fd; 
+        transform: translateY(-8px);
+        box-shadow: 0 12px 20px rgba(66, 165, 245, 0.2);
+    }
+    .sad:hover .emoji { transform: scale(1.2); }
+
+    .focused:hover { 
+        background-color: #e8f5e9; 
+        transform: translateY(-8px);
+        box-shadow: 0 12px 20px rgba(102, 187, 106, 0.2);
+    }
+    .focused:hover .emoji { transform: scale(1.2) rotate(-5deg); }
+
+    .tired:hover { 
+        background-color: #f3e5f5; 
+        transform: translateY(-8px);
+        box-shadow: 0 12px 20px rgba(171, 71, 188, 0.2);
+    }
+    .tired:hover .emoji { transform: scale(1.2); }
+
+    .mood-card.active {
+        box-shadow: 0 10px 25px rgba(0,0,0,0.12);
+        transform: scale(1.05);
+        border-bottom: 3px solid #007bff;
+    }
+</style>
+
+<div class="mood-selection-wrapper">
+    <div class="container d-flex justify-content-center">
+        <div class="mood-container-card">
+            <h2 class="text-center text-primary mb-4 fw-bold">
+                Select Your Mood
+            </h2>
+
+            <form id="moodForm" method="post" action="{% url 'recommend_courses' %}">
+                {% csrf_token %}
+                <input type="hidden" name="mood" id="moodInput">
+
+                <div class="text-center text-primary mb-3">
+                    <label class="form-label fw-bold fs-4">
+                        How are you feeling Today?
+                    </label>
+
+                    <div class="mood-row">
+                        <div class="mood-card happy" onclick="selectMood('Happy')">
+                            <div class="emoji">😊</div>
+                            <div class="mood-text">Happy</div>
+                        </div>
+
+                        <div class="mood-card sad" onclick="selectMood('Sad')">
+                            <div class="emoji">😔</div>
+                            <div class="mood-text">Sad</div>
+                        </div>
+
+                        <div class="mood-card focused" onclick="selectMood('Focused')">
+                            <div class="emoji">🧠</div>
+                            <div class="mood-text">Focused</div>
+                        </div>
+
+                        <div class="mood-card tired" onclick="selectMood('Tired')">
+                            <div class="emoji">😴</div>
+                            <div class="mood-text">Tired</div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function selectMood(mood) {
+    document.getElementById('moodInput').value = mood;
+
+    // highlight selected card
+    document.querySelectorAll('.mood-card').forEach(card => {
+        card.classList.remove('active');
+    });
+
+    event.currentTarget.classList.add('active');
+
+    // Submit form with a tiny delay for effect
+    setTimeout(() => {
+        document.getElementById('moodForm').submit();
+    }, 400);
+}
+</script>
+
+{% endblock %}

@@ -1,0 +1,126 @@
+{% include 'learning/navbar.html' %}
+
+{% block content %}
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+
+<style>
+    body {
+        /* New distinct background for Login: A focused library setting */
+        background: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), 
+                    url('https://t3.ftcdn.net/jpg/11/02/73/30/360_F_1102733023_gxNqjAZ7rsCLu4aU6rNJZKg3kcUPibHo.jpg');
+        background-size: cover;
+        background-position: center;
+        background-attachment: fixed;
+        font-family: 'Poppins', sans-serif;
+        height: 100vh;
+        margin: 0;
+    }
+
+    .login-card {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(12px);
+        border-radius: 20px;
+        border: none;
+        box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+    }
+
+    .alert-custom {
+        background: white;
+        border: none;
+        border-left: 5px solid #dc3545;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        font-weight: 500;
+        color: #333;
+    }
+
+    .btn-login {
+        background: #1a73e8;
+        border: none;
+        padding: 12px;
+        font-weight: 600;
+        border-radius: 50px;
+        transition: all 0.3s ease;
+    }
+
+    .btn-login:hover {
+        background: #1557b0;
+        transform: translateY(-2px);
+    }
+
+    .brand-title {
+        color: white;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        font-weight: 700;
+    }
+
+    .input-group-text { background: #f8f9fa; border-right: none; }
+    .form-control { border-left: none; border-radius: 10px; padding: 12px; }
+</style>
+
+<div class="container py-5 mt-5">
+    <div class="text-center mb-4">
+        <h1 class="brand-title">Welcome Back</h1>
+        <p class="text-white opacity-75">Continue your Mood Learning journey</p>
+    </div>
+
+    <div class="card login-card p-4 mx-auto" style="max-width: 420px;">
+        {% if messages or form.errors %}
+            <div class="alert alert-custom alert-dismissible fade show mb-4" role="alert">
+                <div class="d-flex align-items-center">
+                    <i class="bi bi-exclamation-circle-fill text-danger me-2 fs-5"></i>
+                    <span>Invalid username or password.</span>
+                </div>
+                <button type="button" class="btn-close shadow-none" data-bs-dismiss="alert"></button>
+            </div>
+        {% endif %}
+
+        <form method="post">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label class="form-label small fw-bold text-secondary">Username</label>
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-person"></i></span>
+                    <input type="text" name="username" class="form-control" placeholder="Username" required>
+                </div>
+            </div>
+
+            <div class="mb-2">
+                <label class="form-label small fw-bold text-secondary">Password</label>
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-lock"></i></span>
+                    <input type="password" name="password" id="id_password" class="form-control" placeholder="••••••••" required>
+                    <span class="input-group-text" style="cursor:pointer;" onclick="togglePassword()">
+                        <i class="bi bi-eye" id="toggleIcon"></i>
+                    </span>
+                </div>
+            </div>
+
+            <div class="text-end mb-4">
+                <a href="{% url 'password_reset' %}" class="text-primary text-decoration-none small">Forgot Password?</a>
+            </div>
+
+            <button type="submit" class="btn btn-login w-100 text-white shadow-sm mb-3">Sign In</button>
+        </form>
+
+        <div class="text-center mt-3 pt-3 border-top">
+            <span class="text-muted small">Don't have an account?</span> 
+            <a href="{% url 'register' %}" class="text-primary fw-bold text-decoration-none small ms-1">Register</a>
+        </div>
+    </div>
+</div>
+<script>
+    function togglePassword() {
+        const pw = document.getElementById('id_password');
+        const icon = document.getElementById('toggleIcon');
+        if (pw.type === 'password') {
+            pw.type = 'text';
+            icon.classList.replace('bi-eye', 'bi-eye-slash');
+        } else {
+            pw.type = 'password';
+            icon.classList.replace('bi-eye-slash', 'bi-eye');
+        }
+    }
+</script>
+{% endblock %}

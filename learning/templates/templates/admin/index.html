@@ -1,0 +1,597 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static admin_stats %}
+
+{% block coltype %}colM{% endblock %}
+{% block bodyclass %}{{ block.super }} ml-dashboard{% endblock %}
+{% block breadcrumbs %}{% endblock %}
+
+{% block content_title %}<h1>Admin Dashboard</h1>{% endblock %}
+
+{% block content %}
+<style>
+    /* === Dark workspace matching sidebar === */
+    body.ml-dashboard {
+        background: #343a40 !important;   /* AdminLTE sidebar-dark color */
+        color: #e5e7eb !important;
+        color-scheme: dark;
+    }
+    body.ml-dashboard .content-wrapper,
+    body.ml-dashboard #container,
+    body.ml-dashboard #content,
+    body.ml-dashboard #content-main,
+    body.ml-dashboard .main-content,
+    body.ml-dashboard .content { background: transparent !important; }
+    body.ml-dashboard #content { padding: 1.5rem 2rem 3rem !important; }
+    body.ml-dashboard #content > h1,
+    body.ml-dashboard #content-main > h1 {
+        font-size: 1.7rem; font-weight: 700; letter-spacing: -.4px;
+        color: #f9fafb; margin: 0;
+    }
+    .ml-subtitle { color: #9ca3af; font-size: .9rem; margin-top: 4px; margin-bottom: 1.25rem; }
+
+    /* === Card grid === */
+    .ml-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+        gap: 1rem;
+        margin: 0 0 1.75rem;
+    }
+    .ml-card {
+        position: relative;
+        background: #3f464d;
+        border: 1px solid #4b5159;
+        border-radius: 14px;
+        padding: 1.1rem 1.15rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,.25);
+        transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+        overflow: hidden;
+    }
+    /* Stretched-link: clicking anywhere on the card opens the model list.
+       The card is position:relative, the link itself is NOT positioned so its
+       ::before absolutely positions to the card. */
+    .ml-title-link {
+        color: #f3f4f6 !important;
+        text-decoration: none !important;
+    }
+    .ml-title-link::before {
+        content: '';
+        position: absolute;
+        top: 0; right: 0; bottom: 0; left: 0;
+        z-index: 1;
+    }
+    .ml-title-link:hover { color: #a5b4fc !important; }
+    /* Action pills stay clickable above the stretched link */
+    .ml-card-actions { position: relative; z-index: 2; }
+    .ml-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 25px rgba(0,0,0,.35);
+        border-color: #6366f1;
+    }
+    .ml-card .label {
+        color: #9ca3af;
+        font-size: .72rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .6px;
+    }
+    .ml-card .value {
+        font-size: 1.7rem;
+        font-weight: 700;
+        margin: 6px 0 4px;
+        letter-spacing: -.5px;
+        color: #f9fafb;
+    }
+    .ml-card .delta {
+        font-size: .78rem;
+        color: #9ca3af;
+        font-weight: 500;
+    }
+    .ml-card .icon-box {
+        position: absolute; top: 1rem; right: 1rem;
+        width: 40px; height: 40px; border-radius: 10px;
+        display: flex; align-items: center; justify-content: center;
+        color: #fff; font-size: 1rem;
+    }
+    .ml-card .icon-box svg { width: 18px; height: 18px; }
+    .ml-card-actions {
+        margin-top: .65rem;
+        display: flex; gap: .4rem; flex-wrap: wrap;
+    }
+    .ml-card-actions a {
+        font-size: .72rem;
+        padding: 3px 9px;
+        border-radius: 999px;
+        background: rgba(99,102,241,.2);
+        color: #c7d2fe !important;
+        text-decoration: none;
+        font-weight: 600;
+    }
+    .ml-card-actions a:hover { background: rgba(99,102,241,.35); color: #fff !important; }
+    .ml-card-actions a.add { background: rgba(16,185,129,.22); color: #6ee7b7 !important; }
+    .ml-card-actions a.add:hover { background: rgba(16,185,129,.4); color: #fff !important; }
+
+    /* App section header */
+    .ml-app-header {
+        display: flex; align-items: center; justify-content: space-between;
+        margin: 1.5rem 0 .25rem;
+        padding-bottom: .4rem;
+        border-bottom: 1px solid #4b5159;
+    }
+    .ml-app-header h2 {
+        font-size: 1.05rem; font-weight: 700; margin: 0;
+        letter-spacing: -.3px; color: #f3f4f6;
+    }
+    .ml-app-header .ml-count {
+        font-size: .78rem; color: #9ca3af;
+    }
+
+    /* === Two-column layout: main + right aside === */
+    .ml-layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 320px;
+        gap: 1.25rem;
+        align-items: start;
+    }
+    @media (max-width: 1100px) {
+        .ml-layout { grid-template-columns: 1fr; }
+    }
+    .ml-main { min-width: 0; }
+    .ml-aside { position: sticky; top: 1rem; }
+
+    .ml-aside-card {
+        background: #3f464d;
+        border: 1px solid #4b5159;
+        border-radius: 14px;
+        padding: 1.1rem 1.15rem 1rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,.25);
+    }
+    .ml-aside-header { margin-bottom: .85rem; }
+    .ml-aside-header h3 {
+        font-size: 1.15rem; font-weight: 700; margin: 0; color: #f3f4f6;
+    }
+    .ml-aside-sub { font-size: .88rem; color: #9ca3af; }
+    .ml-empty { text-align: center; padding: 1.25rem 0; color: #9ca3af; font-size: .95rem; }
+
+    .ml-actionlist { list-style: none; padding: 0; margin: 0; }
+    .ml-actionlist li {
+        display: flex; gap: .65rem;
+        padding: .65rem 0;
+        border-bottom: 1px solid #4b5159;
+    }
+    .ml-actionlist li:last-child { border-bottom: none; }
+    .ml-actionlist .ml-dot {
+        width: 8px; height: 8px; border-radius: 50%;
+        margin-top: 7px; flex-shrink: 0;
+        background: #6b7280;
+    }
+    .ml-actionlist .ml-add  .ml-dot { background: #10b981; }
+    .ml-actionlist .ml-change .ml-dot { background: #f59e0b; }
+    .ml-actionlist .ml-del  .ml-dot { background: #ef4444; }
+    .ml-action-title { font-size: .95rem; font-weight: 600; color: #f3f4f6; line-height: 1.35; }
+    .ml-action-title a { color: #a5b4fc; text-decoration: none; }
+    .ml-action-title a:hover { text-decoration: underline; }
+    .ml-action-meta { font-size: .82rem; color: #9ca3af; margin-top: 3px; }
+
+    /* === Stat cards (matches image 1 exactly) === */
+    .ml-stat {
+        display: block;
+        background: #3f464d;
+        border: 1px solid #4b5159;
+        border-radius: 14px;
+        padding: 1.1rem 1.2rem 1.15rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,.25);
+        transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+        text-decoration: none !important;
+        color: inherit !important;
+        cursor: pointer;
+    }
+    .ml-stat:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 25px rgba(0,0,0,.35);
+        border-color: #6366f1;
+    }
+    .ml-stat .head {
+        display: flex; justify-content: space-between; align-items: flex-start;
+        gap: .75rem;
+    }
+    .ml-stat .lbl {
+        color: #9ca3af; font-size: .72rem; font-weight: 700;
+        text-transform: uppercase; letter-spacing: .6px; line-height: 1.3;
+    }
+    .ml-stat .icon {
+        width: 38px; height: 38px; border-radius: 9px; flex-shrink: 0;
+        display: flex; align-items: center; justify-content: center;
+        color: #fff;
+    }
+    .ml-stat .icon svg { width: 18px; height: 18px; }
+    .ml-stat .val {
+        font-size: 2rem; font-weight: 700; color: #f9fafb;
+        margin: .5rem 0 .15rem; letter-spacing: -.5px; line-height: 1.1;
+    }
+    .ml-stat .delta { font-size: .78rem; color: #9ca3af; font-weight: 500; }
+    .ml-stat .delta.up { color: #6ee7b7; font-weight: 600; }
+
+    /* Gradient palette cycled across cards */
+    .grad-1 { background: linear-gradient(135deg,#4f46e5,#8b5cf6); }
+    .grad-2 { background: linear-gradient(135deg,#06b6d4,#0ea5e9); }
+    .grad-3 { background: linear-gradient(135deg,#10b981,#059669); }
+    .grad-4 { background: linear-gradient(135deg,#ef4444,#f97316); }
+    .grad-5 { background: linear-gradient(135deg,#f59e0b,#f43f5e); }
+    .grad-6 { background: linear-gradient(135deg,#ec4899,#db2777); }
+    .grad-7 { background: linear-gradient(135deg,#64748b,#334155); }
+    .grad-8 { background: linear-gradient(135deg,#8b5cf6,#6366f1); }
+
+    /* === Analytics panels (merged from /portal/) === */
+    .ml-grid-2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: .9rem;
+        margin: 1rem 0 0;
+    }
+    @media (max-width: 992px) { .ml-grid-2 { grid-template-columns: 1fr; } }
+
+    .ml-panel {
+        background: #3f464d;
+        border: 1px solid #4b5159;
+        border-radius: 12px;
+        padding: .85rem 1rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,.25);
+    }
+    .ml-panel h3 {
+        font-size: .95rem; font-weight: 700; margin: 0 0 .6rem;
+        color: #f3f4f6; letter-spacing: -.2px;
+    }
+    .ml-panel .ml-empty { padding: 1rem 0; }
+    .ml-chart-wrap { position: relative; height: 200px; }
+
+    /* Top courses */
+    .ml-course-row {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 9px 0; border-bottom: 1px dashed #4b5159;
+        gap: 12px;
+    }
+    .ml-course-row:last-child { border-bottom: none; }
+    .ml-course-row .name { min-width: 120px; font-weight: 500; color: #f3f4f6; font-size: .9rem; }
+    .ml-course-row .bar {
+        flex: 1; height: 8px; background: #2c3035; border-radius: 999px; overflow: hidden;
+    }
+    .ml-course-row .bar > span {
+        display: block; height: 100%;
+        background: linear-gradient(90deg,#4f46e5,#8b5cf6);
+        border-radius: 999px;
+    }
+    .ml-course-row .count { color: #9ca3af; font-weight: 600; font-size: .85rem; }
+
+    /* Mood legend */
+    .ml-mood-legend { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 1rem; }
+    .ml-mood-legend .item { display: flex; align-items: center; gap: 6px; color: #cbd5e1; font-size: .85rem; }
+    .ml-mood-legend .dot { width: 10px; height: 10px; border-radius: 50%; }
+
+    /* Tables */
+    .ml-table { width: 100%; border-collapse: collapse; margin-top: .5rem; }
+    .ml-table th, .ml-table td {
+        padding: .65rem .5rem; border-bottom: 1px solid #4b5159;
+        font-size: .88rem; color: #e5e7eb; text-align: left;
+    }
+    .ml-table th {
+        font-size: .72rem; text-transform: uppercase; letter-spacing: .5px;
+        color: #9ca3af; font-weight: 700; background: #2c3035;
+    }
+    .ml-table tbody tr:hover { background: #353a42; }
+    .ml-avatar {
+        display: inline-flex; align-items: center; justify-content: center;
+        width: 30px; height: 30px; border-radius: 50%;
+        background: linear-gradient(135deg,#4f46e5,#8b5cf6); color: #fff;
+        font-weight: 600; font-size: .8rem; margin-right: 8px; vertical-align: middle;
+    }
+    .ml-btn-sm {
+        font-size: .78rem; padding: 4px 10px; border-radius: 6px;
+        background: rgba(99,102,241,.2); color: #c7d2fe !important;
+        text-decoration: none; font-weight: 600;
+    }
+    .ml-btn-sm:hover { background: rgba(99,102,241,.4); color: #fff !important; }
+    .ml-badge {
+        font-size: .72rem; padding: 3px 9px; border-radius: 999px; font-weight: 600;
+    }
+    .ml-badge.active   { background: rgba(16,185,129,.2); color: #6ee7b7; }
+    .ml-badge.inactive { background: rgba(107,114,128,.2); color: #d1d5db; }
+</style>
+
+<h1 style="font-size:1.7rem;font-weight:700;margin:0;color:#f9fafb;">Admin Dashboard</h1>
+<div class="ml-subtitle">Welcome back, monitor student engagement and platform activity at a glance.</div>
+
+<div class="ml-layout">
+<div id="content-main" class="ml-main">
+    {% students_count as v_students %}
+    {% new_students_this_week as v_new_week %}
+    {% model_count 'learning' 'Course' as v_courses %}
+    {% model_count 'learning' 'Enrollment' as v_enrollments %}
+    {% model_count 'learning' 'QuizRecording' as v_recordings %}
+    {% model_count 'learning' 'Certificate' as v_certs %}
+    {% model_count 'learning' 'AssignmentSubmission' as v_subs %}
+
+    <div class="ml-cards">
+        <a class="ml-stat" href="/admin/auth/user/">
+            <div class="head">
+                <div class="lbl">Total Students</div>
+                <div class="icon grad-1">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M22 11l-4 4-2-2"></path><circle cx="9" cy="7" r="4"></circle>
+                        <path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"></path>
+                    </svg>
+                </div>
+            </div>
+            <div class="val">{{ v_students }}</div>
+            <div class="delta up">↑ {{ v_new_week }} new this week</div>
+        </a>
+        <a class="ml-stat" href="/admin/learning/course/">
+            <div class="head">
+                <div class="lbl">Courses</div>
+                <div class="icon grad-2">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+                        <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+                    </svg>
+                </div>
+            </div>
+            <div class="val">{{ v_courses }}</div>
+            <div class="delta">Across all streams</div>
+        </a>
+        <a class="ml-stat" href="/admin/learning/enrollment/">
+            <div class="head">
+                <div class="lbl">Enrollments</div>
+                <div class="icon grad-3">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="8.5" cy="7" r="4"></circle>
+                        <path d="M17 11l2 2 4-4"></path>
+                    </svg>
+                </div>
+            </div>
+            <div class="val">{{ v_enrollments }}</div>
+            <div class="delta">Paid + free combined</div>
+        </a>
+        <a class="ml-stat" href="/admin/learning/quizrecording/">
+            <div class="head">
+                <div class="lbl">Quiz Recordings</div>
+                <div class="icon grad-4">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <polygon points="23 7 16 12 23 17 23 7"></polygon>
+                        <rect x="1" y="5" width="15" height="14" rx="2"></rect>
+                    </svg>
+                </div>
+            </div>
+            <div class="val">{{ v_recordings }}</div>
+            <div class="delta">Webcam proctoring</div>
+        </a>
+        <a class="ml-stat" href="/admin/learning/certificate/">
+            <div class="head">
+                <div class="lbl">Certificates Issued</div>
+                <div class="icon grad-5">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="8" r="7"></circle>
+                        <polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline>
+                    </svg>
+                </div>
+            </div>
+            <div class="val">{{ v_certs }}</div>
+            <div class="delta">Completed quizzes</div>
+        </a>
+        <a class="ml-stat" href="/admin/learning/assignmentsubmission/">
+            <div class="head">
+                <div class="lbl">Assignments</div>
+                <div class="icon grad-6">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <path d="M12 18v-6"></path><path d="M9 15h6"></path>
+                    </svg>
+                </div>
+            </div>
+            <div class="val">{{ v_subs }}</div>
+            <div class="delta">Submitted by students</div>
+        </a>
+    </div>
+
+    {# === Analytics panels merged from custom dashboard === #}
+    {% mood_distribution_json as mood_json %}
+    {% top_enrolled_courses 5 as top_courses %}
+    {% recent_quiz_recordings 5 as recent_recs %}
+    {% registered_students 10 as recent_students %}
+
+    <div class="ml-grid-2">
+        <div class="ml-panel">
+            <h3>Mood Distribution</h3>
+            <div class="ml-chart-wrap"><canvas id="moodChart"></canvas></div>
+            <div class="ml-mood-legend" id="moodLegend"></div>
+            <div class="ml-empty" id="moodEmpty" style="display:none;">No mood data captured yet.</div>
+        </div>
+
+        <div class="ml-panel">
+            <h3>Top Enrolled Courses</h3>
+            {% if top_courses %}
+                {% for c in top_courses %}
+                    <div class="ml-course-row">
+                        <div class="name">{{ c.course__title|default:"Untitled" }}</div>
+                        <div class="bar"><span style="width: {% widthratio c.total top_courses.0.total 100 %}%"></span></div>
+                        <div class="count">{{ c.total }}</div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="ml-empty">No enrollments yet.</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="ml-panel" style="margin-top:.9rem;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem;">
+            <h3 style="margin:0;">Recent Quiz Recordings</h3>
+            <a href="/admin/learning/quizrecording/" class="ml-btn-sm">View all</a>
+        </div>
+        <table class="ml-table">
+            <thead>
+                <tr><th>Student</th><th>Course</th><th>Recorded At</th><th style="text-align:right;">Video</th></tr>
+            </thead>
+            <tbody>
+                {% for r in recent_recs %}
+                    <tr>
+                        <td><span class="ml-avatar">{{ r.user.username|slice:":1"|upper }}</span>{{ r.user.username }}</td>
+                        <td>{{ r.course.title }}</td>
+                        <td style="color:#9ca3af;">{{ r.recorded_at|date:"M d, Y H:i" }}</td>
+                        <td style="text-align:right;">
+                            {% if r.video %}<a class="ml-btn-sm" href="{{ r.video.url }}" target="_blank">Play</a>{% else %}<span style="color:#9ca3af;">—</span>{% endif %}
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr><td colspan="4" class="ml-empty">No recordings yet.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="ml-panel" style="margin-top:.9rem;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem;">
+            <h3 style="margin:0;">Registered Students</h3>
+            <a href="/admin/auth/user/" class="ml-btn-sm">View all</a>
+        </div>
+        <table class="ml-table">
+            <thead>
+                <tr><th>Student</th><th>Email</th><th>Joined</th><th>Status</th><th style="text-align:right;">Action</th></tr>
+            </thead>
+            <tbody>
+                {% for s in recent_students %}
+                    <tr>
+                        <td><span class="ml-avatar">{{ s.username|slice:":1"|upper }}</span>{{ s.username }}</td>
+                        <td>{{ s.email|default:"—" }}</td>
+                        <td style="color:#9ca3af;">{{ s.date_joined|date:"M d, Y" }}</td>
+                        <td>{% if s.is_active %}<span class="ml-badge active">Active</span>{% else %}<span class="ml-badge inactive">Inactive</span>{% endif %}</td>
+                        <td style="text-align:right;"><a class="ml-btn-sm" href="/admin/auth/user/{{ s.id }}/change/">Edit</a></td>
+                    </tr>
+                {% empty %}
+                    <tr><td colspan="5" class="ml-empty">No students registered yet.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <h2 style="margin:1.75rem 0 .75rem;font-size:1.05rem;font-weight:700;color:#f3f4f6;">Manage Models</h2>
+    {% if app_list %}
+        {% for app in app_list %}
+            <div class="ml-app-header">
+                <h2>{{ app.name }}</h2>
+                <span class="ml-count">{{ app.models|length }} model{{ app.models|length|pluralize }}</span>
+            </div>
+            <div class="ml-cards">
+                {% for model in app.models %}
+                    <div class="ml-card">
+                        <div class="icon-box grad-{% cycle '1' '2' '3' '4' '5' '6' '7' '8' %}">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                                 stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="4" width="18" height="16" rx="3"></rect>
+                                <path d="M3 10h18"></path>
+                                <path d="M8 4v6"></path>
+                            </svg>
+                        </div>
+                        <div class="label">{{ app.name }}</div>
+                        <div class="value">
+                            {% if model.admin_url %}
+                                <a href="{{ model.admin_url }}" class="ml-title-link">{{ model.name }}</a>
+                            {% else %}
+                                {{ model.name }}
+                            {% endif %}
+                        </div>
+                        <div class="ml-card-actions">
+                            {% if model.admin_url %}
+                                <a href="{{ model.admin_url }}">View list</a>
+                            {% endif %}
+                            {% if model.add_url %}
+                                <a class="add" href="{{ model.add_url }}">+ Add</a>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endfor %}
+    {% endif %}
+</div>{# /.ml-main #}
+
+<aside class="ml-aside">
+    <div class="ml-aside-card">
+        <div class="ml-aside-header">
+            <h3>Recent Actions</h3>
+            <span class="ml-aside-sub">My latest activity</span>
+        </div>
+        {% load log %}
+        {% get_admin_log 10 as admin_log for_user user %}
+        {% if not admin_log %}
+            <div class="ml-empty">No recent actions yet.</div>
+        {% else %}
+            <ul class="ml-actionlist">
+            {% for entry in admin_log %}
+                <li class="{% if entry.is_addition %}ml-add{% endif %}{% if entry.is_change %}ml-change{% endif %}{% if entry.is_deletion %}ml-del{% endif %}">
+                    <span class="ml-dot"></span>
+                    <div class="ml-action-body">
+                        <div class="ml-action-title">
+                            {% if entry.is_deletion or not entry.get_admin_url %}
+                                {{ entry.object_repr }}
+                            {% else %}
+                                <a href="{{ entry.get_admin_url }}">{{ entry.object_repr }}</a>
+                            {% endif %}
+                        </div>
+                        <div class="ml-action-meta">
+                            {% if entry.content_type %}{{ entry.content_type.name|capfirst }}{% else %}Unknown{% endif %}
+                            · {{ entry.action_time|timesince }} ago
+                        </div>
+                    </div>
+                </li>
+            {% endfor %}
+            </ul>
+        {% endif %}
+    </div>
+</aside>
+</div>{# /.ml-layout #}
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+(function(){
+    var moodData = {{ mood_json|default:"{\"labels\":[],\"values\":[]}" }};
+    var palette = ['#4f46e5','#10b981','#f59e0b','#ef4444','#06b6d4','#ec4899','#8b5cf6'];
+    var canvas = document.getElementById('moodChart');
+    var emptyEl = document.getElementById('moodEmpty');
+    var legend = document.getElementById('moodLegend');
+    if (!moodData.labels || moodData.labels.length === 0) {
+        if (canvas) canvas.style.display = 'none';
+        if (emptyEl) emptyEl.style.display = 'block';
+        return;
+    }
+    if (canvas && window.Chart) {
+        new Chart(canvas, {
+            type: 'doughnut',
+            data: {
+                labels: moodData.labels,
+                datasets: [{
+                    data: moodData.values,
+                    backgroundColor: moodData.labels.map(function(_, i){ return palette[i % palette.length]; }),
+                    borderWidth: 0,
+                    hoverOffset: 6
+                }]
+            },
+            options: {
+                cutout: '65%',
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: false,
+                plugins: { legend: { display: false }, tooltip: { enabled: true } },
+                hover: { mode: null }
+            }
+        });
+        moodData.labels.forEach(function(label, i){
+            var item = document.createElement('div');
+            item.className = 'item';
+            item.innerHTML = '<span class="dot" style="background:' + palette[i % palette.length] + '"></span>' + label + ' <strong style="color:#f3f4f6;margin-left:4px;">' + moodData.values[i] + '</strong>';
+            legend.appendChild(item);
+        });
+    }
+})();
+</script>
+{% endblock %}

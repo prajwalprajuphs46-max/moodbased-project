@@ -1,0 +1,21 @@
+{% extends 'learning/base.html' %}
+
+{% block content %}
+<div class="status-wrapper" style="background: linear-gradient(-45deg, #991B1B, #EF4444, #F87171); min-height: 90vh; display: flex; align-items: center; justify-content: center;">
+    <div class="status-card shadow-lg" style="background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(20px); border-radius: 30px; color: white; padding: 50px; text-align: center; max-width: 500px;">
+        <div class="icon" style="font-size: 70px; color: #ffffff;"><i class="fas fa-exclamation-triangle"></i></div>
+        <h1 class="fw-bold">Transaction Failed</h1>
+        <p class="opacity-75">We encountered an issue while processing your payment. No money was charged.</p>
+        
+        {% if course_id %}
+            <a href="{% url 'payment_page' course_id %}" class="btn btn-outline-light rounded-pill fw-bold w-100 mt-3 p-3">
+                <i class="fas fa-redo me-2"></i>Try Payment Again
+            </a>
+        {% endif %}
+        
+        <a href="{% url 'index' %}" class="btn btn-link text-white opacity-75 mt-3">
+            Return to Course Catalog
+        </a>
+    </div>
+</div>
+{% endblock %}

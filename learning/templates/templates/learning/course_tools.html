@@ -1,0 +1,46 @@
+{% extends 'learning/base.html' %}
+
+{% block content %}
+<div class="container mt-5 mb-5">
+    <div class="card shadow-lg border-0 rounded-4 p-4 bg-light">
+        <h2 class="fw-bold text-primary mb-4">Resources: {{ course.title }}</h2>
+        
+        <div class="row g-4">
+            <div class="col-md-6">
+                <div class="p-4 bg-white rounded-4 shadow-sm h-100">
+                    <h4 class="fw-bold"><i class="fas fa-file-powerpoint text-danger me-2"></i> PPT Notes</h4>
+                    <p class="text-muted">Download the presentation slides for this course.</p>
+                    {% if course.ppt_file %}
+                        <a href="{{ course.ppt_file.url }}" class="btn btn-danger rounded-pill px-4" download>
+                            <i class="fas fa-download me-2"></i> Download PPT
+                        </a>
+                    {% else %}
+                        <div class="alert alert-warning py-2">No PPT file uploaded for this course.</div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="p-4 bg-white rounded-4 shadow-sm h-100">
+                    <h4 class="fw-bold"><i class="fas fa-headphones text-primary me-2"></i> Audio Lesson</h4>
+                    <p class="text-muted">Listen to the summary or lecture audio.</p>
+                    {% if course.audio_file %}
+                        <audio controls class="w-100 mt-2">
+                            <source src="{{ course.audio_file.url }}" type="audio/mpeg">
+                            Your browser does not support the audio element.
+                        </audio>
+                    {% else %}
+                        <div class="alert alert-warning py-2">No audio lesson available.</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-4">
+            <a href="{% url 'course_videos' course.id %}" class="text-decoration-none text-secondary">
+                <i class="fas fa-arrow-left me-1"></i> Back to Videos
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

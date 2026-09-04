@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Mood Learning | AI-Powered Education{% endblock %}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8f9fa; }
+        
+        /* Navbar Styling */
+        .navbar { background-color: #ffffff !important; border-bottom: 1px solid #e9ecef; }
+        .navbar-brand { font-weight: 700; color: #0d6efd !important; letter-spacing: -0.5px; }
+        .nav-link { color: #495057 !important; font-weight: 500; transition: color 0.2s; }
+        .nav-link:hover { color: #0d6efd !important; }
+
+        /* Professional Search Bar */
+        .search-container-pro {
+            background: #f1f3f5;
+            border-radius: 8px;
+            padding: 2px 12px;
+            border: 1px solid transparent;
+            transition: all 0.2s;
+        }
+        .search-container-pro:focus-within {
+            background: #fff;
+            border-color: #0d6efd;
+            box-shadow: 0 0 0 3px rgba(13,110,253,0.1);
+        }
+        .search-input-pro {
+            border: none;
+            background: transparent;
+            outline: none;
+            padding: 8px;
+            width: 250px;
+            font-size: 0.9rem;
+        }
+
+        /* Sidebar & Menu Items */
+        .offcanvas { width: 320px !important; border-left: none; }
+        .menu-icon { font-size: 1.2rem; margin-right: 15px; color: #6c757d; }
+        .list-group-item { border: none; padding: 12px 20px; font-weight: 500; color: #495057; transition: all 0.2s; }
+        .list-group-item:hover { background-color: #f8f9fa; color: #0d6efd; }
+        .list-group-item:hover .menu-icon { color: #0d6efd; }
+        
+        .logout-item { color: #dc3545 !important; font-weight: 600; }
+        .logout-item:hover { background-color: #fff5f5 !important; }
+        .logout-item .menu-icon { color: #dc3545 !important; }
+
+        .admin-badge { background-color: #fff3bf; color: #963207; border: 1px solid #ffe066; font-weight: 600; font-size: 0.75rem; }
+
+        /* --- MoodBot AI Floating UI --- */
+        .ai-chat-launcher {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 60px;
+            height: 60px;
+            background: #0d6efd;
+            border-radius: 50%;
+            box-shadow: 0 4px 15px rgba(13,110,253,0.3);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            transition: transform 0.2s ease-in-out;
+        }
+        .ai-chat-launcher:hover { transform: scale(1.1); }
+
+        #ai-chat-window {
+            position: fixed;
+            bottom: 100px;
+            right: 30px;
+            width: 350px;
+            height: 480px;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            display: none;
+            flex-direction: column;
+            z-index: 2000;
+            overflow: hidden;
+            border: 1px solid #e9ecef;
+        }
+        .chat-header { 
+            background: #0d6efd; 
+            color: white; 
+            padding: 15px 20px; 
+            font-weight: 600; 
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        #chat-content { 
+            flex: 1; 
+            padding: 15px; 
+            overflow-y: auto; 
+            background: #fdfdfd; 
+            font-size: 0.9rem;
+        }
+        .message { margin-bottom: 10px; padding: 8px 12px; border-radius: 12px; max-width: 85%; }
+        .user-msg { background: #e7f1ff; align-self: flex-end; margin-left: auto; }
+        .bot-msg { background: #f1f3f5; align-self: flex-start; }
+    </style>
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg sticky-top py-2 shadow-sm">
+    <div class="container">
+        <a class="navbar-brand fs-4" href="{% url 'index' %}">
+            <i class="bi bi-emoji-smile-fill me-2"></i>Mood Learning
+        </a>
+
+        <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navContent">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navContent">
+            <ul class="navbar-nav me-auto">
+                <li class="nav-item"><a class="nav-link" href="{% url 'mood_select' %}">Courses</a></li>
+                <li class="nav-item"><a class="nav-link" href="{% url 'contact' %}">Contact</a></li>
+            </ul>
+
+            {% if request.resolver_match.url_name != 'login' and request.resolver_match.url_name != 'register' %}
+            <form class="d-none d-lg-flex mx-auto" action="{% url 'recommend_courses' %}" method="GET">
+                <div class="search-container-pro d-flex align-items-center">
+                    <i class="bi bi-search text-muted"></i>
+                    <input type="text" id="searchInput" name="search" class="search-input-pro" placeholder="Search for courses...">
+                    <button class="btn btn-link p-0 text-muted" type="button" onclick="startDictation()">
+                        <i class="bi bi-mic"></i>
+                    </button>
+                </div>
+            </form>
+            {% endif %}
+
+            <ul class="navbar-nav ms-auto align-items-center">
+                {% if user.is_authenticated %}
+                    {% if user.is_staff %}
+                    <li class="nav-item me-3">
+                        <a class="btn btn-sm admin-badge rounded-pill px-3" href="{% url 'admin_dashboard' %}">ADMIN PANEL</a>
+                    </li>
+                    {% endif %}
+                    
+                    <li class="nav-item d-none d-lg-block me-3">
+                        <span class="small text-muted">Hello, <strong>{{ user.username }}</strong></span>
+                    </li>
+
+                    <li class="nav-item">
+                        <button class="btn btn-outline-secondary btn-sm rounded-circle p-1" 
+                                type="button" data-bs-toggle="offcanvas" data-bs-target="#rightSidebar">
+                            <img src="https://ui-avatars.com/api/?name={{ user.username }}&background=0D6EFD&color=fff&size=32" class="rounded-circle" alt="user">
+                        </button>
+                    </li>
+                {% else %}
+                    <li class="nav-item"><a class="nav-link me-2" href="{% url 'login' %}">Sign In</a></li>
+                    <li class="nav-item"><a class="btn btn-primary btn-sm rounded-pill px-4" href="{% url 'register' %}">Register</a></li>
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<div class="offcanvas offcanvas-end shadow-lg" tabindex="-1" id="rightSidebar">
+    <div class="offcanvas-header border-bottom py-4">
+        <h5 class="offcanvas-title fw-bold">Account Settings</h5>
+        <button type="button" class="btn-close shadow-none" data-bs-dismiss="offcanvas"></button>
+    </div>
+    <div class="offcanvas-body d-flex flex-column p-0">
+        <div class="list-group list-group-flush">
+            <div class="px-4 py-3 bg-light border-bottom mb-2">
+                <p class="small text-muted mb-0">Signed in as</p>
+                <h6 class="fw-bold mb-0 text-capitalize">{{ user.username }}</h6>
+            </div>
+            <a href="{% url 'student_dashboard' %}" class="list-group-item list-group-item-action"><i class="bi bi-speedometer2 menu-icon"></i> My Dashboard</a>
+            <a href="{% url 'my_profile' %}" class="list-group-item list-group-item-action"><i class="bi bi-person-circle menu-icon"></i> My Profile</a>
+            <a href="{% url 'my_progress' %}" class="list-group-item list-group-item-action"><i class="bi bi-bar-chart-line menu-icon"></i> My Progress</a>
+            <a href="{% url 'change_password' %}" class="list-group-item list-group-item-action"><i class="bi bi-shield-lock menu-icon"></i> Change Password</a>
+            <a href="{% url 'help_support' %}" class="list-group-item list-group-item-action"><i class="bi bi-question-circle menu-icon"></i> Help & Support</a>
+
+            <div class="border-top mt-2">
+                <form action="{% url 'logout' %}" method="post">
+                    {% csrf_token %}
+                    <button type="submit" class="list-group-item list-group-item-action logout-item w-100 text-start">
+                        <i class="bi bi-box-arrow-right menu-icon"></i> Logout
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="ai-chat-launcher" onclick="toggleChat()">
+    <i class="bi bi-robot text-white fs-3"></i>
+</div>
+
+<div id="ai-chat-window">
+    <div class="chat-header">
+        <span>MoodBot AI</span>
+        <button onclick="toggleChat()" class="btn btn-sm text-white p-0"><i class="bi bi-dash-lg"></i></button>
+    </div>
+    <div id="chat-content" class="d-flex flex-column">
+        <div class="message bot-msg">Hello! I'm MoodBot. How are you feeling today? I can recommend courses based on your mood.</div>
+    </div>
+    <div class="p-3 border-top bg-white">
+        <div class="input-group">
+            <input type="text" id="userQuery" class="form-control form-control-sm border-0 bg-light" placeholder="Type a message...">
+            <button onclick="sendChatQuery()" class="btn btn-primary btn-sm rounded-3 ms-2"><i class="bi bi-send"></i></button>
+        </div>
+    </div>
+</div>
+
+<main class="container mt-4 mb-5">
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show shadow-sm border-0" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-alert="alert"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    {% block content %}{% endblock %}
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+// Dictation Logic
+function startDictation() {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+        alert("Voice recognition not supported in this browser.");
+        return;
+    }
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'en-US';
+    recognition.onresult = (event) => {
+        document.getElementById('searchInput').value = event.results[0][0].transcript;
+    };
+    recognition.start();
+}
+
+// AI Chatbot Logic
+function toggleChat() {
+    const chatWin = document.getElementById('ai-chat-window');
+    chatWin.style.display = (chatWin.style.display === "none" || chatWin.style.display === "") ? "flex" : "none";
+}
+
+// Function to get CSRF token from Django cookies
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+async function sendChatQuery() {
+    const input = document.getElementById('userQuery');
+    const content = document.getElementById('chat-content');
+    const message = input.value.trim();
+
+    if (!message) return;
+
+    content.innerHTML += `<div class="message user-msg">${message}</div>`;
+    input.value = "";
+    
+    const loadingId = "loading-" + Date.now();
+    content.innerHTML += `<div class="message bot-msg" id="${loadingId}">Thinking...</div>`;
+    content.scrollTop = content.scrollHeight;
+
+    try {
+        const response = await fetch('/chat-api/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken') // More reliable method
+            },
+            body: JSON.stringify({ message: message }) 
+        });
+
+        const data = await response.json();
+        document.getElementById(loadingId).innerText = data.reply;
+    } catch (error) {
+        document.getElementById(loadingId).innerText = "Connection lost. Check your internet!";
+    }
+    content.scrollTop = content.scrollHeight;
+}
+
+// Allow pressing "Enter" to send message
+document.getElementById("userQuery")?.addEventListener("keypress", function(event) {
+    if (event.key === "Enter") {
+        event.preventDefault();
+        sendChatQuery();
+    }
+});
+
+</script>
+
+</body>
+</html>
